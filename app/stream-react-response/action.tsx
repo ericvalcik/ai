@@ -6,9 +6,9 @@ import {
   experimental_StreamData,
   experimental_StreamingReactResponse,
 } from 'ai';
-import { experimental_buildOpenAIMessages } from 'ai/prompts';
+import {experimental_buildOpenAIMessages} from 'ai/prompts';
 import OpenAI from 'openai';
-import { ChatCompletionCreateParams } from 'openai/resources/chat';
+import {ChatCompletionCreateParams} from 'openai/resources/chat';
 
 const functions: ChatCompletionCreateParams.Function[] = [
   {
@@ -32,6 +32,27 @@ const functions: ChatCompletionCreateParams.Function[] = [
     },
   },
   {
+    name: 'create_calendar_event',
+    description: 'Create a Google calendar event',
+    parameters: {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          description: 'The title of the event',
+        },
+        start_time: {
+          type: 'string',
+          description: 'The start time of the event in human readable format.',
+        },
+        end_time: {
+          type: 'string',
+          description: 'The end time of the event in human readable format.',
+        },
+      }
+    }
+  },
+  {
     name: 'create_image',
     description: 'Create an image for the given description',
     parameters: {
@@ -47,7 +68,7 @@ const functions: ChatCompletionCreateParams.Function[] = [
   },
 ];
 
-export async function handler({ messages }: { messages: Message[] }) {
+export async function handler({messages}: { messages: Message[] }) {
   const data = new experimental_StreamData();
 
   const openai = new OpenAI({
@@ -66,7 +87,7 @@ export async function handler({ messages }: { messages: Message[] }) {
     onFinal() {
       data.close();
     },
-    async experimental_onFunctionCall({ name, arguments: args }) {
+    async experimental_onFunctionCall({name, arguments: args}) {
       switch (name) {
         case 'get_current_weather': {
           // fake function call result:
@@ -76,6 +97,17 @@ export async function handler({ messages }: { messages: Message[] }) {
             format: args.format as string,
             temperature: Math.floor(Math.random() * 60) - 20,
           });
+          return;
+        }
+        
+        case 'create_calendar_event': {
+          data.append({
+            type: 'calendar_event',
+            title: args.title as string,
+            start_time: args.start_time as string,
+            end_time: args.end_time as string,
+          });
+
           return;
         }
 
@@ -106,7 +138,7 @@ export async function handler({ messages }: { messages: Message[] }) {
 
   return new experimental_StreamingReactResponse(stream, {
     data,
-    ui({ content, data }) {
+    ui({content, data}) {
       if (data?.[0] != null) {
         const value = data[0] as any;
 
@@ -128,7 +160,7 @@ export async function handler({ messages }: { messages: Message[] }) {
                     width="24"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z" />
+                    <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
                   </svg>
                 </div>
                 <p className="text-4xl font-semibold mt-2">
@@ -150,6 +182,21 @@ export async function handler({ messages }: { messages: Message[] }) {
                 />
               </div>
             );
+          }
+          
+          case 'calendar_event': {
+            return (
+              <div className="border border-black/75 hover:border-black rounded-2xl shadow-none hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col p-4 gap-4">
+                <h1 className="tracking-tighter mr-20">Create <strong>{value.title}</strong> event that:</h1>
+                <ul>
+                  <li>starts at {value.start_time}</li>
+                  <li>and ends at {value.end_time}</li>
+                </ul>
+                <div className="flex flex-row">
+                  <button className="rounded-lg bg-blue-500 text-white px-1.5">Create Event</button>
+                </div>
+              </div>
+            )
           }
         }
       }

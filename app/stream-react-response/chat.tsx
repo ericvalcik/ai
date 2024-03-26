@@ -21,7 +21,7 @@ export function Chat({ handler }: { handler: any }) {
       <form onSubmit={handleSubmit}>
         <input
           className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
-          placeholder="What is the weather in New York?"
+          placeholder="Ask me anything."
           value={input}
           onChange={handleInputChange}
           autoFocus
