@@ -1,8 +1,10 @@
 'use client';
 
+import { useRef } from "react";
 import { useChat } from 'ai/react';
 
 export function Chat({ handler }: { handler: any }) {
+  const inputRef = useRef<HTMLInputElement>(null);
   const { messages, input, handleInputChange, handleSubmit } = useChat({
     api: handler,
   });
@@ -19,13 +21,19 @@ export function Chat({ handler }: { handler: any }) {
       </ul>
 
       <form onSubmit={handleSubmit}>
-        <input
-          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
+        <textarea
+          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl h-[130px]"
           placeholder="Ask me anything."
           value={input}
           onChange={handleInputChange}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              inputRef.current?.click();
+          }}}
           autoFocus
         />
+        <input type="submit" ref={inputRef} className="hidden" />
       </form>
     </div>
   );
